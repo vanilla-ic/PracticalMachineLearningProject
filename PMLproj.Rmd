@@ -1,0 +1,80 @@
+
+##Predicting Physical Excercise Activities
+
+###Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, our goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants and predict the manner in which the activity is performed. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
+
+
+###Data Import and Processing
+
+Initially we import the data which is in 2 files. One being a large training dataset and the other being a testing data that only contains 20 observations which we will use later to test our chosen model and then submit the results.
+
+```{r, warning=FALSE}
+library(caret)
+library(knitr)
+set.seed(8888)
+download.file('https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv', 'pml-training.csv', 'curl')
+trainingRaw <- read.csv("pml-training.csv", header=TRUE, na.strings=c("NA","#DIV/0!",""))
+download.file('https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv','pml-testing.csv', 'curl')
+testSubmit <- read.csv("pml-testing.csv", header=TRUE, na.strings=c("NA","#DIV/0!",""))
+```
+After we have our data loaded we will do a quick check on the data sets dimensions.
+```{r}
+dim(trainingRaw)
+dim(testSubmit)
+```
+We can see the training dataset (trainingRaw) has 19622 observations and 160 variables, while the testing dataset(testSubmit) has just 20 observations and 160 varaibles.
+
+We then move on to cleaning the data and getting the data suitable for fitting models against.  Many of the columns have a significant amount (e.g. > 97%) of information missing as can be seen in the table below.
+```{r}
+table(colMeans(is.na(trainingRaw)))
+```
+
+
+```{r}
+#First we exclude variables that have lower prediction value.
+nzv <- nearZeroVar(trainingRaw)
+trainingRaw <- trainingRaw[, -nzv]
+
+#Remove any columns that have a significant amount of data missing
+keepcol <- colMeans(is.na(trainingRaw)) < .97
+trainingRaw <- trainingRaw[, keepcol]
+
+#Exclude a few of the columns that have irrelevant information that will impact our model. 
+trainingRaw <- trainingRaw[,-grep("time|user_name|X", colnames(trainingRaw))]
+```
+To build our model and test it we need to partition our training data into a training dataset and a testing dataset.
+```{r}
+inTrain <- createDataPartition(y=trainingRaw$classe,p=0.7, list=FALSE)
+training <- trainingRaw[inTrain,]
+testing <- trainingRaw[-inTrain,]
+dim(training)
+dim(testing)
+```
+We have successfully partitioned our dataset into a training dataset (70%) and a testing dataset (30%). Kindly note we only have 54 columns now. This partitioning will allow us to do our cross-validation on the model.
+
+###Model for predicting activity quality.
+In our study we experimented with a number of differenct models such as tree, lda, KNN, and Boost (gbm). The Boost model can be seen below under the random forest model. Boost performed well with an accuracy of .9922 and predicted the activities well on the confusion matrix. However we decided on random forest based on its superior accuracy and better confusion matrix predictions as discussed below in the cross-validation section.
+```{r, warning=FALSE}
+library(caret); library(randomForest)
+#random forest
+modrf <- train(classe ~., method="rf", data=training)
+#Boost
+#modgbm <- train(classe ~ ., method="gbm",data=training)
+```
+
+###Cross-Validation and out of sample error
+```{r}
+predictrf <- predict(modrf, testing)
+
+confusionMatrix(predictrf, testing$classe)
+#print(modrf$finalModel)
+```
+We can see our random forest model has high accuracy (.9985) with a 95% CI of .9971 and .9993, also the confusion matrix table shows only a few of the variables are not predicted correctly. As the accuracy is 99.85% then the out of sample error (1 - Accuracy) is estimated to be 0.15%.
+
+###Submission
+```{r}
+#Submitted prediction of the original 20 row testing data (testSubmit)
+predictSubmit <- predict(modrf, testSubmit)
+predictSubmit
+```
