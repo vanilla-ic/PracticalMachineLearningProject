@@ -1,2 +1,2 @@
 # PracticalMachineLearningProject
-README file for JHU's Practical Machines Learning Course
+README file for JHU's Practical Machine Learning Course
