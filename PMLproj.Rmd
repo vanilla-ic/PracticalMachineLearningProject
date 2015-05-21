@@ -1,8 +1,10 @@
 
-##Predicting Physical Excercise Activities
+##Predicting the Quality of Physical Exercise Activities
 
 ###Background
-Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, our goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants and predict the manner in which the activity is performed. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement €-“ a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. 
+
+In this project, our goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants and predict the manner or quality in which the activity is performed. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways (labelled A,B,C,D or E). More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
 
 
 ###Data Import and Processing
@@ -51,12 +53,12 @@ testing <- trainingRaw[-inTrain,]
 dim(training)
 dim(testing)
 ```
-We have successfully partitioned our dataset into a training dataset (70%) and a testing dataset (30%). Kindly note we only have 54 columns now. This partitioning will allow us to do our cross-validation on the model.
+We have successfully partitioned our dataset into a training dataset (70%) and a testing dataset (30%). Kindly note that we only have 54 columns now. The partitioning will allow us to do our cross-validation on the model.
 
 ###Model for predicting activity quality.
 In our study we experimented with a number of differenct models such as tree, lda, KNN, and Boost (gbm). The Boost model can be seen below under the random forest model. Boost performed well with an accuracy of .9922 and predicted the activities well on the confusion matrix. However we decided on random forest based on its superior accuracy and better confusion matrix predictions as discussed below in the cross-validation section.
 ```{r, warning=FALSE}
-library(caret); library(randomForest)
+library(randomForest)
 #random forest
 modrf <- train(classe ~., method="rf", data=training)
 #Boost
@@ -68,9 +70,10 @@ modrf <- train(classe ~., method="rf", data=training)
 predictrf <- predict(modrf, testing)
 
 confusionMatrix(predictrf, testing$classe)
-#print(modrf$finalModel)
+
+#print(modrf$finalModel) #fyi, OOB for rf is 0.23%
 ```
-We can see our random forest model has high accuracy (.9985) with a 95% CI of .9971 and .9993, also the confusion matrix table shows only a few of the variables are not predicted correctly. As the accuracy is 99.85% then the out of sample error (1 - Accuracy) is estimated to be 0.15%.
+We can see that our random forest model has high accuracy (.9985) with a 95% CI of .9971 and .9993, also the confusion matrix table shows only a few of the variables are not predicted correctly. As the accuracy is 99.85% then the out of sample error (1 - Accuracy) is estimated to be 0.15%. Further analysis could be performed on the extent of over-fitting.
 
 ###Submission
 ```{r}
